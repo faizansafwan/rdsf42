@@ -6,10 +6,23 @@ from app.extensions import limiter
 bp = Blueprint("wind_api", __name__, url_prefix="/api")
 
 
+def _decision_context() -> dict:
+    return {
+        "decision_cutoff_local_time": current_app.config["DECISION_CUTOFF_LOCAL_TIME"],
+        "decision_timezone": current_app.config.get("DECISION_TZ", "Europe/London"),
+        "decision_day_offset": current_app.config["DECISION_DAY_OFFSET"],
+    }
+
+
 def _envelope(payload: dict) -> dict:
     repo = current_app.extensions["wind_repo"]
     stale, last_updated = repo.cache_status()
-    return {"stale": stale, "last_updated": last_updated, **payload}
+    return {
+        "stale": stale,
+        "last_updated": last_updated,
+        **_decision_context(),
+        **payload,
+    }
 
 
 @bp.get("/health")
@@ -37,11 +50,12 @@ def wind_compare():
 def wind_metrics():
     try:
         start, end = parse_date_range(request.args.get("start"), request.args.get("end"))
+        resolution = parse_resolution(request.args.get("resolution"))
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
     svc = current_app.extensions["wind_service"]
-    metrics = svc.build_metrics(start, end)
+    metrics = svc.build_metrics(start, end, resolution=resolution)
     return jsonify(_envelope({"metrics": metrics}))
 
 
@@ -54,5 +68,5 @@ def publish_time_distribution():
         return jsonify({"error": str(exc)}), 400
 
     svc = current_app.extensions["wind_service"]
-    histogram = svc.publish_time_distribution(d)
-    return jsonify(_envelope({"histogram": histogram, "date": d.isoformat()}))
+    distribution = svc.publish_time_distribution(d)
+    return jsonify(_envelope(distribution))

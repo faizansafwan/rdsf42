@@ -60,13 +60,17 @@ def select_forecast(
 def validate_interval_count(
     start_times: list[datetime],
     *,
-    expected: int = JANUARY_2026_INTERVALS,
+    expected: int | None = None,
     range_start: date | None = None,
     range_end: date | None = None,
+    step_minutes: int = 30,
 ) -> dict:
     """Report gaps and duplicates for a set of settlement intervals."""
     if range_start and range_end:
-        expected = _expected_intervals_in_range(range_start, range_end)
+        if expected is None:
+            expected = _expected_intervals_in_range(range_start, range_end, step_minutes)
+    elif expected is None:
+        expected = JANUARY_2026_INTERVALS
 
     normalized = []
     for t in start_times:
@@ -79,7 +83,7 @@ def validate_interval_count(
     duplicates = len(normalized) - len(unique)
     missing: list[str] = []
     if range_start and range_end:
-        expected_set = _generate_expected_starts(range_start, range_end)
+        expected_set = _generate_expected_starts(range_start, range_end, step_minutes)
         present = set(unique)
         for exp in expected_set:
             if exp not in present:
@@ -94,17 +98,21 @@ def validate_interval_count(
     }
 
 
-def _expected_intervals_in_range(start: date, end: date) -> int:
+def _expected_intervals_in_range(start: date, end: date, step_minutes: int = 30) -> int:
     days = (end - start).days + 1
-    return days * 48
+    periods_per_day = (24 * 60) // step_minutes
+    return days * periods_per_day
 
 
-def _generate_expected_starts(start: date, end: date) -> list[datetime]:
+def _generate_expected_starts(
+    start: date, end: date, step_minutes: int = 30
+) -> list[datetime]:
     out: list[datetime] = []
+    periods_per_day = (24 * 60) // step_minutes
     d = start
     while d <= end:
-        for period in range(48):
-            minutes = period * 30
+        for period in range(periods_per_day):
+            minutes = period * step_minutes
             hour, minute = divmod(minutes, 60)
             ts = datetime(d.year, d.month, d.day, hour, minute, tzinfo=timezone.utc)
             out.append(ts)

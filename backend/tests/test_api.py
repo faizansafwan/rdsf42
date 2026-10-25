@@ -9,6 +9,8 @@ def test_compare_with_seeded_data(client, seeded_repo):
     assert resp.status_code == 200
     body = resp.get_json()
     assert body["stale"] is False
+    assert body["decision_cutoff_local_time"] == "11:00"
+    assert body["decision_timezone"] == "Europe/London"
     assert len(body["data"]) == 2
     first = body["data"][0]
     assert first["forecast_mw"] == 4800.0
@@ -31,3 +33,12 @@ def test_invalid_date(client):
 def test_admin_refresh_unauthorized(client):
     resp = client.post("/api/admin/refresh")
     assert resp.status_code == 401
+
+
+def test_publish_time_distribution(client, seeded_repo):
+    resp = client.get("/api/wind/publish-time-distribution?date=2026-01-01")
+    assert resp.status_code == 200
+    body = resp.get_json()
+    assert body["delivery_date"] == "2026-01-01"
+    assert len(body["buckets"]) >= 1
+    assert any(b["role"] == "selected" for b in body["buckets"])
