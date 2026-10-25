@@ -1,5 +1,3 @@
-import { formatUkDate } from "../../utils/formatters";
-
 export default function DateRangePicker({
   start,
   end,
@@ -7,6 +5,7 @@ export default function DateRangePicker({
   onStartChange,
   onEndChange,
   onResolutionChange,
+  rangeError,
 }) {
   return (
     <div className="controls" role="group" aria-label="Date range and resolution">
@@ -18,7 +17,6 @@ export default function DateRangePicker({
           max="2026-01-31"
           value={start}
           onChange={(e) => onStartChange(e.target.value)}
-          aria-describedby="range-display"
         />
       </label>
       <label>
@@ -29,7 +27,6 @@ export default function DateRangePicker({
           max="2026-01-31"
           value={end}
           onChange={(e) => onEndChange(e.target.value)}
-          aria-describedby="range-display"
         />
       </label>
       <label>
@@ -39,10 +36,11 @@ export default function DateRangePicker({
           <option value="hourly">Hourly (mean of half-hours)</option>
         </select>
       </label>
-      <p id="range-display" className="range-display">
-        Selected range: <strong>{formatUkDate(start)}</strong> →{" "}
-        <strong>{formatUkDate(end)}</strong>
-      </p>
+      {rangeError && (
+        <p className="range-error" role="alert">
+          {rangeError}
+        </p>
+      )}
     </div>
   );
 }

@@ -14,18 +14,25 @@ function summarizeByDay(data) {
   return [...byDay.values()]
     .sort((a, b) => a.day.localeCompare(b.day))
     .map((entry) => {
-      let topPublish = null;
-      let topCount = 0;
+      let modePublish = null;
+      let modeCount = 0;
+      let latestPublish = null;
       for (const [pt, count] of entry.publishTimes.entries()) {
-        if (count > topCount) {
-          topPublish = pt;
-          topCount = count;
+        if (count > modeCount) {
+          modePublish = pt;
+          modeCount = count;
+        }
+        if (!latestPublish || pt > latestPublish) {
+          latestPublish = pt;
         }
       }
       return {
         day: entry.day,
         intervals: entry.intervals,
-        selectedPublishTime: topPublish,
+        modePublish,
+        modeCount,
+        latestPublish,
+        uniquePublishTimes: entry.publishTimes.size,
       };
     });
 }
@@ -33,21 +40,27 @@ function summarizeByDay(data) {
 export default function SelectedForecastSummary({ data }) {
   const rows = summarizeByDay(data);
   if (!rows.length) {
-    return <p>No selected publish times in this range (missing forecasts before cutoff).</p>;
+    return (
+      <p>
+        No selected publish times in this range. Try 30-minute resolution, or check that
+        forecasts exist before the decision cutoff.
+      </p>
+    );
   }
 
   return (
     <div className="selected-forecast-table-wrap">
       <p className="panel-caption">
-        Latest forecast available at gate closure — selected <code>publishTime</code> per
-        delivery day (summarized from matched intervals).
+        Dominant selected <code>publishTime</code> per delivery day (from D-1 cutoff
+        matching). If all intervals share one publish time, mode and latest coincide.
       </p>
       <table className="selected-forecast-table">
         <thead>
           <tr>
             <th>Delivery day</th>
-            <th>Selected publish time (UTC)</th>
-            <th>Intervals matched</th>
+            <th>Dominant publish time (UTC)</th>
+            <th>Intervals with this publish time</th>
+            <th>Latest selected (UTC)</th>
           </tr>
         </thead>
         <tbody>
@@ -55,11 +68,25 @@ export default function SelectedForecastSummary({ data }) {
             <tr key={row.day}>
               <td>{formatUkDate(row.day)}</td>
               <td>
-                <time dateTime={row.selectedPublishTime}>
-                  {row.selectedPublishTime?.replace("T", " ").replace("Z", " UTC")}
+                <time dateTime={row.modePublish}>
+                  {row.modePublish?.replace("T", " ").replace("Z", " UTC")}
                 </time>
+                {row.uniquePublishTimes > 1 && (
+                  <span className="table-note"> ({row.uniquePublishTimes} distinct publishes)</span>
+                )}
               </td>
-              <td>{row.intervals}</td>
+              <td>
+                {row.modeCount} / {row.intervals}
+              </td>
+              <td>
+                {row.latestPublish === row.modePublish ? (
+                  "Same as dominant"
+                ) : (
+                  <time dateTime={row.latestPublish}>
+                    {row.latestPublish?.replace("T", " ").replace("Z", " UTC")}
+                  </time>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>

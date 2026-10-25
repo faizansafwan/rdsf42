@@ -59,7 +59,7 @@ export default function ForecastVsActualChart({ data }) {
         </li>
         <li>
           <span className="series-swatch dashed forecast" /> D-1 forecast (WINDFOR) — dashed
-          line; gaps = no forecast before cutoff
+          line; gaps = no matched forecast (hourly WINDFOR rows or post-cutoff)
         </li>
       </ul>
       <div className="chart-container chart-container--tall">

@@ -53,7 +53,8 @@ export default function MetricsSummaryCards({ metrics, resolution }) {
   if (!metrics) return null;
 
   return (
-    <div className="card-grid" data-testid="metrics-cards">
+    <>
+      <div className="card-grid" data-testid="metrics-cards">
       {METRICS.map(({ key, title, hint, formula, format }) => (
         <article key={key} className="metric-card">
           <h3>{title}</h3>
@@ -67,6 +68,7 @@ export default function MetricsSummaryCards({ metrics, resolution }) {
           )}
         </article>
       ))}
-    </div>
+      </div>
+    </>
   );
 }

@@ -77,6 +77,7 @@ class WindService:
             error = None
             if actual is not None and forecast_mw is not None:
                 error = actual - forecast_mw
+            gap_reason = _forecast_gap_reason(st, by_start.get(st, []), matched, actual)
             rows.append(
                 {
                     "start_time": st.isoformat().replace("+00:00", "Z"),
@@ -89,7 +90,8 @@ class WindService:
                     ),
                     "error_mw": error,
                     "missing_actual": actual is None,
-                    "missing_forecast": matched is None,
+                    "missing_forecast": matched is None and actual is not None,
+                    "gap_reason": gap_reason,
                 }
             )
 
@@ -116,10 +118,31 @@ class WindService:
         quality["intervals_with_missing_actual"] = sum(
             1 for r in rows if r["missing_actual"]
         )
+        quality["gaps_hourly_granularity"] = sum(
+            1 for r in rows if r.get("gap_reason") == "hourly_forecast_granularity"
+        )
+        quality["gaps_no_cutoff_forecast"] = sum(
+            1 for r in rows if r.get("gap_reason") == "no_forecast_before_cutoff"
+        )
+        quality["gaps_no_forecast_data"] = sum(
+            1 for r in rows if r.get("gap_reason") == "no_forecast_data"
+        )
+        quality["matched_for_metrics"] = sum(
+            1
+            for r in rows
+            if r["actual_mw"] is not None and r["forecast_mw"] is not None
+        )
+        if quality["expected_count"]:
+            quality["coverage_pct"] = round(
+                100.0 * quality["matched_for_metrics"] / quality["expected_count"],
+                1,
+            )
+        else:
+            quality["coverage_pct"] = 0.0
         return rows, quality
 
     def build_metrics(self, start: date, end: date, *, resolution: str = "30min") -> dict:
-        rows, _ = self.build_compare(start, end, resolution=resolution)
+        rows, quality = self.build_compare(start, end, resolution=resolution)
         pairs = [
             (r["actual_mw"], r["forecast_mw"])
             for r in rows
@@ -138,6 +161,11 @@ class WindService:
             "mape_excluded_count": m.mape_excluded_count,
             "mape_floor_mw": m.mape_floor_mw,
             "error_convention": "actual_minus_forecast",
+            "expected_intervals": quality["expected_count"],
+            "matched_intervals": quality["matched_for_metrics"],
+            "coverage_pct": quality.get("coverage_pct", 0.0),
+            "resolution": resolution,
+            "forecast_granularity_note": quality.get("forecast_granularity_note"),
         }
 
     def publish_time_distribution(self, delivery_date: date) -> dict:
@@ -177,17 +205,6 @@ class WindService:
                 )
             )
 
-        selected_publish_times: set[datetime] = set()
-        for st, candidates in by_start.items():
-            matched = select_forecast(
-                st,
-                candidates,
-                cutoff_local=self.cutoff_local,
-                day_offset=self.day_offset,
-            )
-            if matched:
-                selected_publish_times.add(matched.publish_time)
-
         sample_start = datetime(
             delivery_date.year,
             delivery_date.month,
@@ -205,9 +222,21 @@ class WindService:
         cutoff_chart_label = cutoff_utc.astimezone(tz).strftime("%H:%M %Z")
 
         pub_counter = Counter(f["publish_time"] for f in forecasts)
+        selected_interval_counts: dict[datetime, int] = defaultdict(int)
+        for st, candidates in by_start.items():
+            matched = select_forecast(
+                st,
+                candidates,
+                cutoff_local=self.cutoff_local,
+                day_offset=self.day_offset,
+            )
+            if matched:
+                selected_interval_counts[matched.publish_time] += 1
+
         buckets: list[dict] = []
         for pub_time, count in sorted(pub_counter.items(), key=lambda x: x[0]):
-            if pub_time in selected_publish_times:
+            selected_n = selected_interval_counts.get(pub_time, 0)
+            if selected_n > 0:
                 role = "selected"
             elif pub_time <= cutoff_utc:
                 role = "eligible_not_selected"
@@ -218,11 +247,14 @@ class WindService:
                     "publish_time_utc": pub_time.isoformat().replace("+00:00", "Z"),
                     "label": pub_time.astimezone(tz).strftime("%H:%M %Z"),
                     "count": count,
+                    "selected_intervals": selected_n,
                     "role": role,
                 }
             )
 
-        primary_selected = max(selected_publish_times) if selected_publish_times else None
+        primary_selected = (
+            max(selected_interval_counts.keys()) if selected_interval_counts else None
+        )
         return {
             **empty,
             "cutoff_utc": cutoff_utc.isoformat().replace("+00:00", "Z"),
@@ -234,6 +266,21 @@ class WindService:
             ),
             "buckets": buckets,
         }
+
+
+def _forecast_gap_reason(
+    start_time_utc: datetime,
+    candidates: list[ForecastCandidate],
+    matched: ForecastCandidate | None,
+    actual: float | None,
+) -> str | None:
+    if actual is None or matched is not None:
+        return None
+    if not candidates:
+        if start_time_utc.minute == 30:
+            return "hourly_forecast_granularity"
+        return "no_forecast_data"
+    return "no_forecast_before_cutoff"
 
 
 def _expected_intervals_for_resolution(start: date, end: date, resolution: str) -> int:
@@ -261,15 +308,19 @@ def _aggregate_hourly(rows: list[dict]) -> list[dict]:
         if actual_mw is not None and forecast_mw is not None:
             error_mw = actual_mw - forecast_mw
 
+        pub_series = group["publish_time"].dropna()
+        publish_time = pub_series.iloc[0] if len(pub_series) else None
+
         out.append(
             {
                 "start_time": ts.isoformat().replace("+00:00", "Z"),
                 "actual_mw": actual_mw,
                 "forecast_mw": forecast_mw,
-                "publish_time": None,
+                "publish_time": publish_time,
                 "error_mw": error_mw,
                 "missing_actual": missing_actual,
                 "missing_forecast": not has_any_forecast,
+                "gap_reason": None,
             }
         )
     return out

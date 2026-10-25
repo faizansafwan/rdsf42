@@ -35,6 +35,9 @@ export default function App() {
   const cutoffTz =
     compareBody?.decision_timezone ?? metricsBody?.decision_timezone ?? "Europe/London";
 
+  const rangeError =
+    start && end && end < start ? "End date must be on or after start date." : null;
+
   return (
     <div className="layout">
       <header>
@@ -45,8 +48,9 @@ export default function App() {
           <strong>
             {cutoffTime} {cutoffTz}
           </strong>{" "}
-          on the day before each delivery day — only forecasts published at or before this
-          time are used.
+          on the day before each delivery day (assumed, configurable — not verified against
+          official GB auction gate closure). Only forecasts published at or before this time
+          are used.
         </p>
       </header>
 
@@ -54,6 +58,7 @@ export default function App() {
         start={start}
         end={end}
         resolution={resolution}
+        rangeError={rangeError}
         onStartChange={(v) => {
           setStart(v);
           if (v > histogramDate) setHistogramDate(v);
@@ -80,13 +85,9 @@ export default function App() {
 
       {loading && <div className="skeleton" aria-busy="true" />}
 
-      {!loading && !error && (
+      {!loading && !error && !rangeError && (
         <>
-          <DataQualityBanner
-            stale={compareBody?.stale}
-            lastUpdated={compareBody?.last_updated}
-            quality={compareBody?.quality}
-          />
+          <DataQualityBanner stale={compareBody?.stale} quality={compareBody?.quality} />
           <MetricsSummaryCards metrics={metricsBody?.metrics} resolution={resolution} />
           <section className="panel">
             <h2>Forecast vs actual</h2>

@@ -73,7 +73,14 @@ export default function PublishTimeHistogram({
               <XAxis dataKey="label" interval={0} angle={-25} textAnchor="end" height={70} />
               <YAxis allowDecimals={false} label={{ value: "Forecast rows", angle: -90, position: "insideLeft" }} />
               <Tooltip
-                formatter={(v, _n, props) => [v, ROLE_LABELS[props.payload.role] ?? "Publishes"]}
+                formatter={(v, name, props) => {
+                  const sel = props.payload.selected_intervals ?? 0;
+                  const label = ROLE_LABELS[props.payload.role] ?? "Publishes";
+                  return [
+                    `${v} forecast row(s), ${sel} interval(s) selected for D-1`,
+                    label,
+                  ];
+                }}
               />
               <Legend
                 payload={Object.entries(ROLE_LABELS).map(([role, name]) => ({
