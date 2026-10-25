@@ -19,14 +19,61 @@ body {
   padding: 1.25rem;
 }
 
-header h1 {
-  margin: 0 0 0.25rem;
-  font-size: 1.5rem;
+.app-header {
+  margin-bottom: 1.25rem;
 }
 
-header p {
-  margin: 0 0 1rem;
+.app-header__bar {
+  background: linear-gradient(135deg, #0c4a6e 0%, #0369a1 55%, #0ea5e9 100%);
+  color: #f8fafc;
+  box-shadow: 0 2px 8px rgb(15 23 42 / 12%);
+}
+
+.app-header__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+}
+
+.app-header__mark {
+  flex-shrink: 0;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 20%);
+}
+
+.app-header__titles {
+  min-width: 0;
+}
+
+.app-header__name {
+  margin: 0;
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.app-header__tagline {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  color: rgb(248 250 252 / 88%);
+  line-height: 1.35;
+}
+
+.app-header__lede-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.875rem 1.25rem 0;
+}
+
+.app-header__lede {
+  margin: 0;
+  font-size: 0.9rem;
   color: #475569;
+  line-height: 1.45;
 }
 
 .controls {

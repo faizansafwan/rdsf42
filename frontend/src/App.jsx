@@ -9,6 +9,7 @@ import SelectedForecastSummary from "./components/SelectedForecastSummary/Select
 import { useWindCompare } from "./hooks/useWindCompare";
 import { useWindMetrics } from "./hooks/useWindMetrics";
 import { usePublishTimeDistribution } from "./hooks/usePublishTimeDistribution";
+import AppHeader from "./components/AppHeader/AppHeader";
 
 const DEFAULT_START = "2026-01-01";
 const DEFAULT_END = "2026-01-31";
@@ -39,21 +40,10 @@ export default function App() {
     start && end && end < start ? "End date must be on or after start date." : null;
 
   return (
-    <div className="layout">
-      <header>
-        <h1>UK day-ahead wind forecast accuracy</h1>
-        <p>
-          Compares Elexon WINDFOR (D-1 selection) against FUELHH wind outturn for January
-          2026. Decision cutoff:{" "}
-          <strong>
-            {cutoffTime} {cutoffTz}
-          </strong>{" "}
-          on the day before each delivery day (assumed, configurable — not verified against
-          official GB auction gate closure). Only forecasts published at or before this time
-          are used.
-        </p>
-      </header>
+    <>
+      <AppHeader cutoffTime={cutoffTime} cutoffTz={cutoffTz} />
 
+      <main className="layout">
       <DateRangePicker
         start={start}
         end={end}
@@ -118,6 +108,7 @@ export default function App() {
         </>
       )}
 
-    </div>
+      </main>
+    </>
   );
 }
