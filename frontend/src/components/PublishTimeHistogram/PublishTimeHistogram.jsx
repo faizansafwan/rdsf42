@@ -2,33 +2,111 @@ import {
   Bar,
   BarChart,
   CartesianGrid,
+  Cell,
+  Legend,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-export default function PublishTimeHistogram({ histogram, date }) {
-  if (!histogram?.length) {
-    return <p>No publish-time data for {date}.</p>;
+const ROLE_COLORS = {
+  selected: "#16a34a",
+  eligible_not_selected: "#94a3b8",
+  after_cutoff: "#dc2626",
+};
+
+const ROLE_LABELS = {
+  selected: "Selected for D-1 decision",
+  eligible_not_selected: "Before cutoff, not selected",
+  after_cutoff: "After cutoff (excluded)",
+};
+
+export default function PublishTimeHistogram({
+  distribution,
+  histogramDate,
+  onDateChange,
+  error,
+  isLoading,
+}) {
+  const buckets = distribution?.buckets ?? [];
+
+  if (error) {
+    return (
+      <div className="banner error" role="alert">
+        Could not load publish-time audit: {error.message}
+      </div>
+    );
   }
 
-  const chartData = histogram.map((h) => ({
-    hour: `${h.hour_utc}:00 UTC`,
-    count: h.count,
-  }));
+  if (isLoading) {
+    return <div className="skeleton" style={{ minHeight: 120 }} aria-busy="true" />;
+  }
 
   return (
-    <div style={{ width: "100%", height: 240 }}>
-      <ResponsiveContainer>
-        <BarChart data={chartData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="hour" />
-          <YAxis allowDecimals={false} />
-          <Tooltip />
-          <Bar dataKey="count" fill="#6366f1" name="Forecast publishes" />
-        </BarChart>
-      </ResponsiveContainer>
+    <div>
+      <div className="controls histogram-controls">
+        <label>
+          Delivery day for histogram
+          <input
+            type="date"
+            min="2026-01-01"
+            max="2026-01-31"
+            value={histogramDate}
+            onChange={(e) => onDateChange(e.target.value)}
+          />
+        </label>
+      </div>
+      <p className="panel-caption">
+        {distribution?.x_axis_caption ?? "Distinct publish times observed"} · Gate closure{" "}
+        {distribution?.decision_cutoff_local_time} {distribution?.decision_timezone} on
+        decision day (D{distribution?.decision_day_offset ?? -1})
+      </p>
+      {!buckets.length ? (
+        <p>No publish-time data for {histogramDate}.</p>
+      ) : (
+        <div className="chart-container chart-container--histogram">
+          <ResponsiveContainer>
+            <BarChart data={buckets} margin={{ bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="label" interval={0} angle={-25} textAnchor="end" height={70} />
+              <YAxis allowDecimals={false} label={{ value: "Forecast rows", angle: -90, position: "insideLeft" }} />
+              <Tooltip
+                formatter={(v, _n, props) => [v, ROLE_LABELS[props.payload.role] ?? "Publishes"]}
+              />
+              <Legend
+                payload={Object.entries(ROLE_LABELS).map(([role, name]) => ({
+                  value: name,
+                  type: "square",
+                  color: ROLE_COLORS[role],
+                }))}
+              />
+              {(() => {
+                const marker = buckets.find((b) => b.role === "after_cutoff")?.label;
+                if (!marker) return null;
+                return (
+                  <ReferenceLine
+                    x={marker}
+                    stroke="#7c2d12"
+                    strokeDasharray="4 4"
+                    label={{
+                      value: `After ${distribution?.decision_cutoff_local_time} cutoff`,
+                      position: "top",
+                      fill: "#7c2d12",
+                    }}
+                  />
+                );
+              })()}
+              <Bar dataKey="count" name="Publish events">
+                {buckets.map((entry) => (
+                  <Cell key={entry.publish_time_utc} fill={ROLE_COLORS[entry.role] ?? "#6366f1"} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
