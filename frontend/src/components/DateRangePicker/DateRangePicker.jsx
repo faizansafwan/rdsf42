@@ -1,3 +1,5 @@
+import { formatUkDate } from "../../utils/formatters";
+
 export default function DateRangePicker({
   start,
   end,
@@ -16,6 +18,7 @@ export default function DateRangePicker({
           max="2026-01-31"
           value={start}
           onChange={(e) => onStartChange(e.target.value)}
+          aria-describedby="range-display"
         />
       </label>
       <label>
@@ -26,15 +29,20 @@ export default function DateRangePicker({
           max="2026-01-31"
           value={end}
           onChange={(e) => onEndChange(e.target.value)}
+          aria-describedby="range-display"
         />
       </label>
       <label>
         Resolution
         <select value={resolution} onChange={(e) => onResolutionChange(e.target.value)}>
           <option value="30min">30 minutes</option>
-          <option value="hourly">Hourly</option>
+          <option value="hourly">Hourly (mean of half-hours)</option>
         </select>
       </label>
+      <p id="range-display" className="range-display">
+        Selected range: <strong>{formatUkDate(start)}</strong> →{" "}
+        <strong>{formatUkDate(end)}</strong>
+      </p>
     </div>
   );
 }

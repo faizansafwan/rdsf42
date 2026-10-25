@@ -14,8 +14,8 @@ export function getWindCompare(start, end, resolution) {
   return fetchJson(`/api/wind/compare?${q}`);
 }
 
-export function getWindMetrics(start, end) {
-  const q = new URLSearchParams({ start, end });
+export function getWindMetrics(start, end, resolution) {
+  const q = new URLSearchParams({ start, end, resolution });
   return fetchJson(`/api/wind/metrics?${q}`);
 }
 

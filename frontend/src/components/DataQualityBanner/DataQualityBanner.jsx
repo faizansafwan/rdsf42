@@ -1,25 +1,33 @@
+import { formatRefreshTimestamp } from "../../utils/formatters";
+
 export default function DataQualityBanner({ stale, lastUpdated, quality }) {
-  if (!stale && !quality?.missing_count) return null;
+  const hasWarnings = stale || (quality?.missing_count ?? 0) > 0;
 
   return (
-    <div className={`banner ${stale ? "warning" : "warning"}`} role="status">
-      {stale && (
-        <p>
-          Showing cached data — live refresh failed. Last updated:{" "}
-          {lastUpdated || "unknown"}.
-        </p>
-      )}
-      {quality?.missing_count > 0 && (
-        <p>
-          Data quality: {quality.missing_count} missing settlement interval(s) in
-          range (expected {quality.expected_count}, got {quality.actual_count}).
-        </p>
-      )}
-      {quality?.intervals_with_missing_forecast > 0 && (
-        <p>
-          {quality.intervals_with_missing_forecast} interval(s) have no D-1 forecast
-          before the decision cutoff.
-        </p>
+    <div className="data-status" role="status">
+      <p className="freshness-line">
+        Last refreshed: <strong>{formatRefreshTimestamp(lastUpdated)}</strong> (UTC)
+        {stale ? (
+          <span className="stale-tag"> · Cached data — live refresh failed</span>
+        ) : (
+          <span className="fresh-tag"> · Live cache</span>
+        )}
+      </p>
+      {hasWarnings && (
+        <div className={`banner ${stale ? "warning" : "warning"}`}>
+          {stale && (
+            <p>
+              Showing cached data — live refresh failed. Confirm metrics against the last
+              good snapshot before making decisions.
+            </p>
+          )}
+          {quality?.missing_count > 0 && (
+            <p>
+              Data quality: {quality.missing_count} missing settlement interval(s) in
+              range (expected {quality.expected_count}, got {quality.actual_count}).
+            </p>
+          )}
+        </div>
       )}
     </div>
   );
