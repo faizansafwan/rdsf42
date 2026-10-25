@@ -127,13 +127,13 @@ comparison chart makes everything built on top of it unreviewable.
 
 ## Tier 3 — Polish (do only if time remains)
 
-- [ ] Add axis titles: Y-axis "Generation (MW)" (fix the wrapping "MW" text), X-axis
+- [x] Add axis titles: Y-axis "Generation (MW)" (fix the wrapping "MW" text), X-axis
       "Time (UTC)" on both charts.
-- [ ] Hover tooltip on metric cards showing the formula, not just the static subtext.
-- [ ] Use `−` (U+2212) consistently for negative values instead of ASCII `-`.
-- [ ] Confirm legend swatches visually match each line's actual style (solid vs.
+- [x] Hover tooltip on metric cards showing the formula, not just the static subtext.
+- [x] Use `−` (U+2212) consistently for negative values instead of ASCII `-`.
+- [x] Confirm legend swatches visually match each line's actual style (solid vs.
       dashed) once T0.1 introduces distinct dash patterns.
-- [ ] **Deliberate, not default:** decide whether "Built with AI-assisted development
+- [x] **Deliberate, not default:** decide whether "Built with AI-assisted development
       (Cursor)" belongs on the client-facing pitch view, or only in the tech-lead
       walkthrough and README — currently it's on by default on every view.
 

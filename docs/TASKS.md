@@ -73,8 +73,8 @@ Triggered by a screenshot review that found a blocking rendering bug and several
 against the plan. Full detail, root-cause hypotheses, and file-level fixes in
 `docs/QA_FIX_PLAN.md` — work through its tiers in order (Tier 0 blocker first, then
 Tier 1 required-before-submission items) before doing Phase 6's polish/video pass.
-- [ ] Tier 0: forecast line not rendering in the comparison chart
-- [ ] Tier 1: data-quality banner, cutoff display, histogram selected-vs-excluded view,
+- [x] Tier 0: forecast line not rendering in the comparison chart
+- [x] Tier 1: data-quality banner, cutoff display, histogram selected-vs-excluded view,
       MAPE exclusion count, date-format risk
-- [ ] Tier 2 (if time allows): selected-forecast lag view, accessibility cue, resolution
+- [x] Tier 2 (if time allows): selected-forecast lag view, accessibility cue, resolution
       toggle verification
