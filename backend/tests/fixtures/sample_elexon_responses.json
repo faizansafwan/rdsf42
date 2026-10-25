@@ -1,0 +1,21 @@
+{
+  "fuelhh_wind": [
+    {
+      "dataset": "FUELHH",
+      "publishTime": "2026-01-01T00:00:00Z",
+      "startTime": "2026-01-01T00:00:00Z",
+      "settlementDate": "2026-01-01",
+      "settlementPeriod": 1,
+      "fuelType": "WIND",
+      "generation": 5000
+    }
+  ],
+  "windfor": [
+    {
+      "dataset": "WINDFOR",
+      "publishTime": "2025-12-31T10:00:00Z",
+      "startTime": "2026-01-01T00:00:00Z",
+      "generation": 4800
+    }
+  ]
+}
